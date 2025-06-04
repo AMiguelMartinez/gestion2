@@ -8,7 +8,12 @@ export default class AuthUsuariosController {
       const newpass = await hash.make(password)
       const respuesta = await Database.query("insert into usuarios(email,password) values ($1, $2)", [email,newpass])
       console.log(respuesta)
-      return response.json({respuesta:'Usuario creado exitosamente'})
+      if(respuesta.rowCount >0) {
+        return response.json({respuesta:'Usuario creado exitosamente'})
+      } else {
+        return response.json({respuesta:'No se pudo registrar el usuario'})
+      }
+      
     }
 
     async login ({request, response}) {
@@ -16,11 +21,13 @@ export default class AuthUsuariosController {
         const resp = await Database.query("select * from usuarios where email = $1", [email])
         console.log(resp.rows[0].password)
         if (resp.rows.length>0){
-            if (password == resp.rows[0].password){
-            return response.json({msj:'Usuario logeado correctamente'})
+            //descriptar y comparar
+            const valido= await hash.verify(resp.rows[0].password,password)
+            if (valido == true){
+            return response.json({msj:'Inicio de sesion correcto'})
+            } else {
+                return response.json({msj:'Error en el email o password'})
             }
         }
-        
-
     }
 }
